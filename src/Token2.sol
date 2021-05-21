@@ -2,9 +2,12 @@
 pragma solidity ^0.8.4;
 
 // optimized vs non optimized
+// test transferFrom external or public
+// have transfer call transferFrom or not
 // automatic over/under flow? good? a library?
+// mint
 // burn
-contract ZXX {
+contract ZXX2 {
     string constant public name = "Enzo Nicolas Perez Token";
     string constant public symbol = "ENP";
     uint8 constant public decimals = 18;
@@ -32,17 +35,20 @@ contract ZXX {
     }
 
     function transfer(address to, uint256 amount) external returns (bool) {
-        return transferFrom(msg.sender, to, amount);
+        uint256 balance = balanceOf[msg.sender];
+        require(balance >= amount, "insufficient balance");
+        balanceOf[msg.sender] = balance - amount;
+        balanceOf[to] += amount;
+        emit Transfer(msg.sender, to, amount);
+        return true;
     }
 
-    function transferFrom(address from, address to, uint256 amount) public returns (bool) {
+    function transferFrom(address from, address to, uint256 amount) external returns (bool) {
         uint256 balance = balanceOf[from];
         require(balance >= amount, "insufficient balance");
-        if (from != msg.sender) {
-            uint256 allowed = allowance[from][msg.sender];
-            require(allowed >= amount, "not enough allowance");
-            allowance[from][msg.sender] = allowed - amount;
-        }
+        uint256 allowed = allowance[from][msg.sender];
+        require(allowed >= amount, "not enough allowance");
+        allowance[from][msg.sender] = allowed - amount;
         balanceOf[from] = balance - amount;
         balanceOf[to] += amount;
         emit Transfer(from, to, amount);
