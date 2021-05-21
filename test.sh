@@ -4,5 +4,5 @@ export DAPP_SOLC=/usr/bin/solc
 export DAPP_BUILD_OPTIMIZE=1
 export DAPP_BUILD_OPTIMIZE_RUNS=999999
 # dapp build
-dapp test --verbosity 2 -m gas_usage
+dapp test --verbosity 2 # -m gas_usage
 # dapp debug
