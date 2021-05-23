@@ -4,52 +4,35 @@ pragma solidity ^0.8.4;
 import "ds-test/test.sol";
 
 import "./Token.sol";
-import "./Token2.sol";
 
 contract User {
-    function doApprove(ZXX zxx, address to, uint256 amount) external returns (bool) {
+    function doApprove(IERC20 zxx, address to, uint256 amount) external returns (bool) {
         return zxx.approve(to, amount);
     }
-    function doTransfer(ZXX zxx, address to, uint256 amount) external returns (bool) {
+    function doTransfer(IERC20 zxx, address to, uint256 amount) external returns (bool) {
         return zxx.transfer(to, amount);
     }
-    function doTransferFrom(ZXX zxx, address from, address to, uint256 amount) external returns (bool) {
+    function doTransferFrom(IERC20 zxx, address from, address to, uint256 amount) external returns (bool) {
         return zxx.transferFrom(from, to, amount);
     }
-    function doMint(ZXX zxx, address to, uint256 amount) external returns (bool) {
-        return zxx.mint(to, amount);
-    }
-}
-contract User2 {
-    function doApprove(ZXX2 zxx, address to, uint256 amount) external returns (bool) {
-        return zxx.approve(to, amount);
-    }
-    function doTransfer(ZXX2 zxx, address to, uint256 amount) external returns (bool) {
-        return zxx.transfer(to, amount);
-    }
-    function doTransferFrom(ZXX2 zxx, address from, address to, uint256 amount) external returns (bool) {
-        return zxx.transferFrom(from, to, amount);
-    }
-    function doMint(ZXX2 zxx, address to, uint256 amount) external returns (bool) {
+    function doMint(IERC20 zxx, address to, uint256 amount) external returns (bool) {
         return zxx.mint(to, amount);
     }
 }
 
 contract TokenTest is DSTest {
     ZXX zxx;
-    ZXX2 zxx2;
     User u1;
     User u2;
-    User2 u3;
-    User2 u4;
+    User u3;
+    User u4;
 
     function setUp() public {
         zxx = new ZXX();
-        zxx2 = new ZXX2();
         u1 = new User();
         u2 = new User();
-        u3 = new User2();
-        u4 = new User2();
+        u3 = new User();
+        u4 = new User();
     }
 
     function test_total_supply() public {
@@ -123,12 +106,6 @@ contract TokenTest is DSTest {
 
     }
 
-    function test_transfer_gas_usage2() public {
-        uint256 gas = gasleft();
-        zxx2.transfer(address(0x1), 1 ether);
-        emit log_named_uint("ZXX2 trasfer", gas - gasleft());
-    }
-
     function test_transferFrom_gas_usage() public {
         zxx.transfer(address(u1), 1 ether);
 
@@ -148,22 +125,75 @@ contract TokenTest is DSTest {
         assertEq(zxx.allowance(address(u1), address(u2)), 0 ether);
     }
 
-    function test_transferFrom_gas_usage2() public {
-        zxx2.transfer(address(u3), 1 ether);
+    function prove_transfer(uint supply, address usr, uint amt) public {
+        zxx.burn(zxx.totalSupply());
+        if (amt > supply) return; // no underflow
 
-        assertEq(zxx2.balanceOf(address(u3)), 1 ether);
+        zxx.mint(address(this), supply);
 
-        u3.doApprove(zxx2, address(u4), 0.5 ether);
+        uint prebal = zxx.balanceOf(usr);
+        zxx.transfer(usr, amt);
+        uint postbal = zxx.balanceOf(usr);
 
-        assertEq(zxx2.allowance(address(u3), address(u4)), 0.5 ether);
+        uint expected = usr == address(this)
+                        ? 0    // self transfer is a noop
+                        : amt; // otherwise `amt` has been transfered to `usr`
+        assertEq(expected, postbal - prebal);
+    }
 
-        uint256 gas = gasleft();
-        u4.doTransferFrom(zxx2, address(u3), address(u4), 0.5 ether);
-        emit log_named_uint("ZXX2 trasferFrom", gas - gasleft());
+    // function prove_transferFrom(uint supply, address usr, uint amt) public {
+    //     zxx.burn(zxx.totalSupply());
+    //     if (amt > supply) return; // no underflow
 
-        assertEq(zxx2.balanceOf(address(u3)), 0.5 ether);
-        assertEq(zxx2.balanceOf(address(u4)), 0.5 ether);
+    //     User u = User(usr);
 
-        assertEq(zxx2.allowance(address(u3), address(u4)), 0 ether);
+    //     zxx.mint(address(this), supply);
+
+    //     zxx.approve(usr, amt);
+
+    //     uint prebal = zxx.balanceOf(usr);
+        
+    //     u.doTransferFrom(zxx, address(this), usr, amt);
+        
+    //     uint postbal = zxx.balanceOf(usr);
+
+    //     uint expected = usr == address(this)
+    //                     ? 0    // self transfer is a noop
+    //                     : amt; // otherwise `amt` has been transfered to `usr`
+    //     assertEq(expected, postbal - prebal);
+    // }
+
+    function prove_transferFrom(uint supply, address usr, uint amt) public {
+        zxx.burn(zxx.totalSupply());
+        if (amt > supply) return; // no underflow
+
+        zxx.mint(usr, supply);
+
+        User(usr).doApprove(zxx, address(this), amt);
+
+        uint prebal = zxx.balanceOf(usr);
+        
+        zxx.transferFrom(usr, address(this), amt);
+        
+        uint postbal = zxx.balanceOf(usr);
+
+        uint expected = usr == address(this)
+                        ? 0    // self transfer is a noop
+                        : amt; // otherwise `amt` has been transfered to `usr`
+        assertEq(expected, postbal - prebal);
+    }
+
+    function prove_balance(address usr, uint amt) public {
+        zxx.burn(zxx.totalSupply());
+        assertEq(0, zxx.balanceOf(usr));
+        zxx.mint(usr, amt);
+        assertEq(amt, zxx.balanceOf(usr));
+    }
+
+    function prove_supply(uint supply) public {
+        zxx.burn(zxx.totalSupply());
+        zxx.mint(address(0x1), supply);
+        uint actual = zxx.totalSupply();
+        assertEq(supply, actual);
     }
 }
