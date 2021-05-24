@@ -1,0 +1,1087 @@
+
+======= src/token.yul (EVM) =======
+
+Pretty printed source:
+object "Token" {
+    code {
+        {
+            sstore(0, caller())
+            let _1 := datasize("runtime")
+            datacopy(0, dataoffset("runtime"), _1)
+            return(0, _1)
+        }
+    }
+    object "runtime" {
+        code {
+            {
+                require(iszero(callvalue()))
+                switch shr(224, calldataload(0))
+                case 0x70a08231 {
+                    returnUint(balanceOf(decodeAsAddress_367()))
+                }
+                case 0x18160ddd { returnUint(sload(1)) }
+                case 0xa9059cbb {
+                    transfer(decodeAsAddress_367(), decodeAsUint_368())
+                    returnTrue()
+                }
+                case 0x23b872dd {
+                    transferFrom(decodeAsAddress_367(), decodeAsAddress(), decodeAsUint())
+                    returnTrue()
+                }
+                case 0x095ea7b3 {
+                    approve(decodeAsAddress_367(), decodeAsUint_368())
+                    returnTrue()
+                }
+                case 0xdd62ed3e {
+                    returnUint(allowance(decodeAsAddress_367(), decodeAsAddress()))
+                }
+                case 0x40c10f19 {
+                    mint(decodeAsAddress_367(), decodeAsUint_368())
+                    returnTrue()
+                }
+                default { revert(0, 0) }
+            }
+            function mint(account, amount)
+            {
+                let _1 := 0
+                if iszero(eq(sload(_1), caller())) { revert(_1, _1) }
+                sstore(1, safeAdd(sload(1), amount))
+                let offset := add(0x1000, account)
+                sstore(offset, safeAdd(sload(offset), amount))
+                mstore(_1, amount)
+                log3(_1, 0x20, 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef, _1, account)
+            }
+            function transfer(to, amount)
+            {
+                executeTransfer(caller(), to, amount)
+            }
+            function approve(spender, amount)
+            {
+                if iszero(spender) { revert(0, 0) }
+                sstore(allowanceStorageOffset(caller(), spender), amount)
+                mstore(0, amount)
+                log3(0, 0x20, 0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925, caller(), spender)
+            }
+            function transferFrom(from, to, amount)
+            {
+                let offset := allowanceStorageOffset(from, caller())
+                let currentAllowance := sload(offset)
+                if gt(amount, currentAllowance) { revert(0, 0) }
+                sstore(offset, sub(currentAllowance, amount))
+                executeTransfer(from, to, amount)
+            }
+            function executeTransfer(from, to, amount)
+            {
+                if iszero(to) { revert(0, 0) }
+                let _1 := 0x1000
+                let offset := add(_1, from)
+                let bal := sload(offset)
+                if gt(amount, bal) { revert(0, 0) }
+                sstore(offset, sub(bal, amount))
+                let offset_1 := add(_1, to)
+                sstore(offset_1, safeAdd(sload(offset_1), amount))
+                mstore(0, amount)
+                log3(0, 0x20, 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef, from, to)
+            }
+            function decodeAsAddress_367() -> v
+            {
+                let _1 := shl(5, v)
+                if lt(calldatasize(), add(_1, 36)) { revert(v, v) }
+                v := calldataload(add(4, _1))
+                if iszero(iszero(and(v, shl(160, 0xffffffffffffffffffffffff)))) { revert(0, 0) }
+            }
+            function decodeAsAddress() -> v
+            {
+                v := decodeAsUint_368()
+                if iszero(iszero(and(v, shl(160, 0xffffffffffffffffffffffff)))) { revert(0, 0) }
+            }
+            function decodeAsUint_368() -> v
+            {
+                if lt(calldatasize(), 68) { revert(v, v) }
+                v := calldataload(36)
+            }
+            function decodeAsUint() -> v
+            {
+                if lt(calldatasize(), 100) { revert(v, v) }
+                v := calldataload(68)
+            }
+            function returnUint(v)
+            {
+                mstore(0, v)
+                return(0, 0x20)
+            }
+            function returnTrue()
+            {
+                mstore(0, 1)
+                return(0, 0x20)
+            }
+            function allowanceStorageOffset(account, spender) -> offset
+            {
+                mstore(offset, add(0x1000, account))
+                mstore(0x20, spender)
+                offset := keccak256(offset, 0x40)
+            }
+            function balanceOf(account) -> bal
+            {
+                bal := sload(add(0x1000, account))
+            }
+            function allowance(account, spender) -> amount
+            {
+                amount := sload(allowanceStorageOffset(account, spender))
+            }
+            function safeAdd(a, b) -> r
+            {
+                r := add(a, b)
+                if or(lt(r, a), lt(r, b)) { revert(0, 0) }
+            }
+            function require(condition)
+            {
+                if iszero(condition) { revert(0, 0) }
+            }
+        }
+    }
+}
+
+
+Binary representation:
+336000556103de80610014600039806000f350fe61000934156103cc565b60003560e01c6370a082318114610066576318160ddd81146100835763a9059cbb8114610093576323b872dd81146100b85763095ea7b381146100e55763dd62ed3e811461010a576340c10f19811461012f5760006000fd610150565b61007e6100796100746102b3565b610386565b610352565b610150565b61008e600154610352565b610150565b6100ab61009e610322565b6100a66102b3565b6101b8565b6100b361035f565b610150565b6100d86100c361033a565b6100cb6102f3565b6100d36102b3565b610212565b6100e061035f565b610150565b6100fd6100f0610322565b6100f86102b3565b6101c8565b61010561035f565b610150565b61012a6101256101186102f3565b6101206102b3565b610396565b610352565b610150565b61014761013a610322565b6101426102b3565b610156565b61014f61035f565b5b506103dd565b6000338154141515610166578081fd5b610172836001546103ac565b60015581611000016101858482546103ac565b81555082815281817fddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef602084a35050505b565b6101c3828233610244565b50505b565b8015156101d55760006000fd5b816101e0823361036c565b558160005280337f8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b92560206000a350505b565b61021c338261036c565b80548085111561022c5760006000fd5b8481038255505061023e838383610244565b5050505b565b8115156102515760006000fd5b6110008181018054808611156102675760006000fd5b85810382555050828101905061027e8482546103ac565b8155508260005281817fddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef60206000a35050505b565b60008060051b602481013610156102c8578182fd5b80600401359150506bffffffffffffffffffffffff60a01b81161515156102ef5760006000fd5b5b90565b60006102fd610322565b90506bffffffffffffffffffffffff60a01b811615151561031e5760006000fd5b5b90565b60006044361015610331578081fd5b60243590505b90565b60006064361015610349578081fd5b60443590505b90565b8060005260206000f3505b565b600160005260206000f35b565b600081611000018152826020526040812090505b92915050565b600081611000015490505b919050565b60006103a2838361036c565b5490505b92915050565b6000828201905082811082821017156103c55760006000fd5b5b92915050565b8015156103d95760006000fd5b505b565b
+
+Text representation:
+    /* "src/token.yul":89:97   */
+  caller
+    /* "src/token.yul":86:87   */
+  0x00
+    /* "src/token.yul":79:98   */
+  sstore
+  dataSize(sub_0)
+    /* "src/token.yul":174:193   */
+  dup1
+  dataOffset(sub_0)
+    /* "src/token.yul":86:87   */
+  0x00
+    /* "src/token.yul":139:194   */
+  codecopy
+    /* "src/token.yul":213:232   */
+  dup1
+    /* "src/token.yul":86:87   */
+  0x00
+    /* "src/token.yul":203:233   */
+  return
+  pop
+stop
+
+sub_0: assembly {
+        /* "src/token.yul":338:366   */
+      tag_1
+        /* "src/token.yul":353:364   */
+      callvalue
+        /* "src/token.yul":346:365   */
+      iszero
+        /* "src/token.yul":338:366   */
+      tag_2
+      jump	// in
+    tag_1:
+      0x00
+        /* "src/token.yul":2709:2724   */
+      calldataload
+        /* "src/token.yul":2705:2786   */
+      0xe0
+      shr
+        /* "src/token.yul":441:451   */
+      0x70a08231
+        /* "src/token.yul":436:552   */
+      dup2
+      eq
+      tag_4
+      jumpi
+        /* "src/token.yul":570:580   */
+      0x18160ddd
+        /* "src/token.yul":565:660   */
+      dup2
+      eq
+      tag_5
+      jumpi
+        /* "src/token.yul":678:688   */
+      0xa9059cbb
+        /* "src/token.yul":673:829   */
+      dup2
+      eq
+      tag_6
+      jumpi
+        /* "src/token.yul":847:857   */
+      0x23b872dd
+        /* "src/token.yul":842:1034   */
+      dup2
+      eq
+      tag_7
+      jumpi
+        /* "src/token.yul":1052:1062   */
+      0x095ea7b3
+        /* "src/token.yul":1047:1201   */
+      dup2
+      eq
+      tag_8
+      jumpi
+        /* "src/token.yul":1219:1229   */
+      0xdd62ed3e
+        /* "src/token.yul":1214:1358   */
+      dup2
+      eq
+      tag_9
+      jumpi
+        /* "src/token.yul":1376:1386   */
+      0x40c10f19
+        /* "src/token.yul":1371:1519   */
+      dup2
+      eq
+      tag_10
+      jumpi
+      0x00
+      0x00
+        /* "src/token.yul":1558:1570   */
+      revert
+        /* "src/token.yul":406:1584   */
+      jump(tag_3)
+        /* "src/token.yul":436:552   */
+    tag_4:
+        /* "src/token.yul":497:538   */
+      tag_11
+        /* "src/token.yul":508:537   */
+      tag_12
+        /* "src/token.yul":518:536   */
+      tag_13
+      tag_14
+      jump	// in
+    tag_13:
+        /* "src/token.yul":508:537   */
+      tag_15
+      jump	// in
+    tag_12:
+        /* "src/token.yul":497:538   */
+      tag_16
+      jump	// in
+    tag_11:
+        /* "src/token.yul":436:552   */
+      jump(tag_3)
+        /* "src/token.yul":565:660   */
+    tag_5:
+        /* "src/token.yul":621:646   */
+      tag_17
+        /* "src/token.yul":4443:4444   */
+      0x01
+        /* "src/token.yul":5052:5075   */
+      sload
+        /* "src/token.yul":621:646   */
+      tag_16
+      jump	// in
+    tag_17:
+        /* "src/token.yul":565:660   */
+      jump(tag_3)
+        /* "src/token.yul":673:829   */
+    tag_6:
+        /* "src/token.yul":741:786   */
+      tag_18
+        /* "src/token.yul":770:785   */
+      tag_19
+      tag_20
+      jump	// in
+    tag_19:
+        /* "src/token.yul":750:768   */
+      tag_21
+      tag_14
+      jump	// in
+    tag_21:
+        /* "src/token.yul":741:786   */
+      tag_22
+      jump	// in
+    tag_18:
+        /* "src/token.yul":803:815   */
+      tag_23
+      tag_24
+      jump	// in
+    tag_23:
+        /* "src/token.yul":673:829   */
+      jump(tag_3)
+        /* "src/token.yul":842:1034   */
+    tag_7:
+        /* "src/token.yul":922:991   */
+      tag_25
+        /* "src/token.yul":975:990   */
+      tag_26
+      tag_27
+      jump	// in
+    tag_26:
+        /* "src/token.yul":955:973   */
+      tag_28
+      tag_29
+      jump	// in
+    tag_28:
+        /* "src/token.yul":935:953   */
+      tag_30
+      tag_14
+      jump	// in
+    tag_30:
+        /* "src/token.yul":922:991   */
+      tag_31
+      jump	// in
+    tag_25:
+        /* "src/token.yul":1008:1020   */
+      tag_32
+      tag_24
+      jump	// in
+    tag_32:
+        /* "src/token.yul":842:1034   */
+      jump(tag_3)
+        /* "src/token.yul":1047:1201   */
+    tag_8:
+        /* "src/token.yul":1114:1158   */
+      tag_33
+        /* "src/token.yul":1142:1157   */
+      tag_34
+      tag_20
+      jump	// in
+    tag_34:
+        /* "src/token.yul":1122:1140   */
+      tag_35
+      tag_14
+      jump	// in
+    tag_35:
+        /* "src/token.yul":1114:1158   */
+      tag_36
+      jump	// in
+    tag_33:
+        /* "src/token.yul":1175:1187   */
+      tag_37
+      tag_24
+      jump	// in
+    tag_37:
+        /* "src/token.yul":1047:1201   */
+      jump(tag_3)
+        /* "src/token.yul":1214:1358   */
+    tag_9:
+        /* "src/token.yul":1283:1344   */
+      tag_38
+        /* "src/token.yul":1294:1343   */
+      tag_39
+        /* "src/token.yul":1324:1342   */
+      tag_40
+      tag_29
+      jump	// in
+    tag_40:
+        /* "src/token.yul":1304:1322   */
+      tag_41
+      tag_14
+      jump	// in
+    tag_41:
+        /* "src/token.yul":1294:1343   */
+      tag_42
+      jump	// in
+    tag_39:
+        /* "src/token.yul":1283:1344   */
+      tag_16
+      jump	// in
+    tag_38:
+        /* "src/token.yul":1214:1358   */
+      jump(tag_3)
+        /* "src/token.yul":1371:1519   */
+    tag_10:
+        /* "src/token.yul":1435:1476   */
+      tag_43
+        /* "src/token.yul":1460:1475   */
+      tag_44
+      tag_20
+      jump	// in
+    tag_44:
+        /* "src/token.yul":1440:1458   */
+      tag_45
+      tag_14
+      jump	// in
+    tag_45:
+        /* "src/token.yul":1435:1476   */
+      tag_46
+      jump	// in
+    tag_43:
+        /* "src/token.yul":1493:1505   */
+      tag_47
+      tag_24
+      jump	// in
+    tag_47:
+        /* "src/token.yul":406:1584   */
+    tag_3:
+      pop
+        /* "src/token.yul":1598:1816   */
+      jump(tag_48)
+    tag_46:
+      0x00
+        /* "src/token.yul":6891:6899   */
+      caller
+      dup2
+        /* "src/token.yul":4947:4964   */
+      sload
+        /* "src/token.yul":6879:6900   */
+      eq
+        /* "src/token.yul":7069:7086   */
+      iszero
+        /* "src/token.yul":7066:7068   */
+      iszero
+      tag_50
+      jumpi
+      dup1
+      dup2
+        /* "src/token.yul":7089:7101   */
+      revert
+        /* "src/token.yul":7066:7068   */
+    tag_50:
+        /* "src/token.yul":5173:5203   */
+      tag_51
+        /* "src/token.yul":5196:5202   */
+      dup4
+        /* "src/token.yul":4443:4444   */
+      0x01
+        /* "src/token.yul":5052:5075   */
+      sload
+        /* "src/token.yul":5173:5203   */
+      tag_52
+      jump	// in
+    tag_51:
+        /* "src/token.yul":4443:4444   */
+      0x01
+        /* "src/token.yul":5148:5204   */
+      sstore
+        /* "src/token.yul":5450:5457   */
+      dup2
+        /* "src/token.yul":4542:4548   */
+      0x1000
+        /* "src/token.yul":4538:4558   */
+      add
+        /* "src/token.yul":5490:5520   */
+      tag_53
+        /* "src/token.yul":5513:5519   */
+      dup5
+        /* "src/token.yul":5504:5510   */
+      dup3
+        /* "src/token.yul":5498:5511   */
+      sload
+        /* "src/token.yul":5490:5520   */
+      tag_52
+      jump	// in
+    tag_53:
+        /* "src/token.yul":5482:5488   */
+      dup2
+        /* "src/token.yul":5475:5521   */
+      sstore
+      pop
+        /* "src/token.yul":4200:4210   */
+      dup3
+      dup2
+        /* "src/token.yul":4190:4211   */
+      mstore
+        /* "src/token.yul":4267:4275   */
+      dup2
+      dup2
+        /* "src/token.yul":3713:3779   */
+      0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef
+        /* "src/token.yul":4236:4240   */
+      0x20
+      dup5
+        /* "src/token.yul":4228:4276   */
+      log3
+      pop
+        /* "src/token.yul":1629:1816   */
+      pop
+      pop
+    tag_49:
+      jump	// out
+        /* "src/token.yul":1829:1928   */
+    tag_22:
+        /* "src/token.yul":1877:1914   */
+      tag_55
+        /* "src/token.yul":1907:1913   */
+      dup3
+        /* "src/token.yul":1903:1905   */
+      dup3
+        /* "src/token.yul":1893:1901   */
+      caller
+        /* "src/token.yul":1877:1914   */
+      tag_56
+      jump	// in
+    tag_55:
+        /* "src/token.yul":1859:1928   */
+      pop
+      pop
+    tag_54:
+      jump	// out
+        /* "src/token.yul":1941:2147   */
+    tag_36:
+        /* "src/token.yul":7076:7085   */
+      dup1
+        /* "src/token.yul":7069:7086   */
+      iszero
+        /* "src/token.yul":7066:7068   */
+      iszero
+      tag_58
+      jumpi
+        /* "src/token.yul":7099:7100   */
+      0x00
+      0x00
+        /* "src/token.yul":7089:7101   */
+      revert
+        /* "src/token.yul":7066:7068   */
+    tag_58:
+        /* "src/token.yul":6078:6084   */
+      dup2
+        /* "src/token.yul":6036:6076   */
+      tag_59
+        /* "src/token.yul":6068:6075   */
+      dup3
+        /* "src/token.yul":2051:2059   */
+      caller
+        /* "src/token.yul":6036:6076   */
+      tag_60
+      jump	// in
+    tag_59:
+        /* "src/token.yul":6029:6085   */
+      sstore
+        /* "src/token.yul":4200:4210   */
+      dup2
+        /* "src/token.yul":4197:4198   */
+      0x00
+        /* "src/token.yul":4190:4211   */
+      mstore
+        /* "src/token.yul":4267:4275   */
+      dup1
+        /* "src/token.yul":2051:2059   */
+      caller
+        /* "src/token.yul":3949:4015   */
+      0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925
+        /* "src/token.yul":4236:4240   */
+      0x20
+        /* "src/token.yul":4197:4198   */
+      0x00
+        /* "src/token.yul":4228:4276   */
+      log3
+        /* "src/token.yul":1975:2147   */
+      pop
+      pop
+    tag_57:
+      jump	// out
+        /* "src/token.yul":2160:2325   */
+    tag_31:
+        /* "src/token.yul":6199:6239   */
+      tag_62
+        /* "src/token.yul":2244:2252   */
+      caller
+        /* "src/token.yul":6222:6229   */
+      dup3
+        /* "src/token.yul":6199:6239   */
+      tag_60
+      jump	// in
+    tag_62:
+        /* "src/token.yul":6286:6292   */
+      dup1
+        /* "src/token.yul":6280:6293   */
+      sload
+        /* "src/token.yul":6330:6346   */
+      dup1
+        /* "src/token.yul":6322:6328   */
+      dup6
+        /* "src/token.yul":6550:6558   */
+      gt
+        /* "src/token.yul":7066:7068   */
+      iszero
+      tag_63
+      jumpi
+        /* "src/token.yul":7099:7100   */
+      0x00
+      0x00
+        /* "src/token.yul":7089:7101   */
+      revert
+        /* "src/token.yul":7066:7068   */
+    tag_63:
+        /* "src/token.yul":6402:6408   */
+      dup5
+        /* "src/token.yul":6384:6400   */
+      dup2
+        /* "src/token.yul":6380:6409   */
+      sub
+        /* "src/token.yul":6372:6378   */
+      dup3
+        /* "src/token.yul":6365:6410   */
+      sstore
+      pop
+      pop
+        /* "src/token.yul":2278:2311   */
+      tag_64
+        /* "src/token.yul":2304:2310   */
+      dup4
+        /* "src/token.yul":2300:2302   */
+      dup4
+        /* "src/token.yul":2294:2298   */
+      dup4
+        /* "src/token.yul":2278:2311   */
+      tag_56
+      jump	// in
+    tag_64:
+        /* "src/token.yul":2200:2325   */
+      pop
+      pop
+      pop
+    tag_61:
+      jump	// out
+        /* "src/token.yul":2339:2573   */
+    tag_56:
+        /* "src/token.yul":7076:7085   */
+      dup2
+        /* "src/token.yul":7069:7086   */
+      iszero
+        /* "src/token.yul":7066:7068   */
+      iszero
+      tag_66
+      jumpi
+        /* "src/token.yul":7099:7100   */
+      0x00
+      0x00
+        /* "src/token.yul":7089:7101   */
+      revert
+        /* "src/token.yul":7066:7068   */
+    tag_66:
+        /* "src/token.yul":4542:4548   */
+      0x1000
+        /* "src/token.yul":5647:5654   */
+      dup2
+        /* "src/token.yul":4542:4548   */
+      dup2
+        /* "src/token.yul":4538:4558   */
+      add
+        /* "src/token.yul":5689:5695   */
+      dup1
+        /* "src/token.yul":5683:5696   */
+      sload
+        /* "src/token.yul":5733:5736   */
+      dup1
+        /* "src/token.yul":5725:5731   */
+      dup7
+        /* "src/token.yul":6550:6558   */
+      gt
+        /* "src/token.yul":7066:7068   */
+      iszero
+      tag_67
+      jumpi
+        /* "src/token.yul":7099:7100   */
+      0x00
+      0x00
+        /* "src/token.yul":7089:7101   */
+      revert
+        /* "src/token.yul":7066:7068   */
+    tag_67:
+        /* "src/token.yul":5779:5785   */
+      dup6
+        /* "src/token.yul":5774:5777   */
+      dup2
+        /* "src/token.yul":5770:5786   */
+      sub
+        /* "src/token.yul":5762:5768   */
+      dup3
+        /* "src/token.yul":5755:5787   */
+      sstore
+      pop
+      pop
+        /* "src/token.yul":5450:5457   */
+      dup3
+        /* "src/token.yul":4542:4548   */
+      dup2
+        /* "src/token.yul":4538:4558   */
+      add
+        /* "src/token.yul":5413:5458   */
+      swap1
+      pop
+        /* "src/token.yul":5490:5520   */
+      tag_68
+        /* "src/token.yul":5513:5519   */
+      dup5
+        /* "src/token.yul":5504:5510   */
+      dup3
+        /* "src/token.yul":5498:5511   */
+      sload
+        /* "src/token.yul":5490:5520   */
+      tag_52
+      jump	// in
+    tag_68:
+        /* "src/token.yul":5482:5488   */
+      dup2
+        /* "src/token.yul":5475:5521   */
+      sstore
+      pop
+        /* "src/token.yul":4200:4210   */
+      dup3
+        /* "src/token.yul":4197:4198   */
+      0x00
+        /* "src/token.yul":4190:4211   */
+      mstore
+        /* "src/token.yul":4267:4275   */
+      dup2
+        /* "src/token.yul":4257:4265   */
+      dup2
+        /* "src/token.yul":3713:3779   */
+      0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef
+        /* "src/token.yul":4236:4240   */
+      0x20
+        /* "src/token.yul":4197:4198   */
+      0x00
+        /* "src/token.yul":4228:4276   */
+      log3
+        /* "src/token.yul":2382:2573   */
+      pop
+      pop
+      pop
+    tag_65:
+      jump	// out
+        /* "src/token.yul":2814:3053   */
+    tag_14:
+        /* "src/token.yul":2850:2851   */
+      0x00
+      dup1
+        /* "src/token.yul":3137:3154   */
+      0x05
+      shl
+        /* "src/token.yul":3194:3208   */
+      0x24
+        /* "src/token.yul":3137:3154   */
+      dup2
+        /* "src/token.yul":3194:3208   */
+      add
+        /* "src/token.yul":3178:3192   */
+      calldatasize
+        /* "src/token.yul":3175:3209   */
+      lt
+        /* "src/token.yul":3172:3174   */
+      iszero
+      tag_70
+      jumpi
+      dup2
+      dup3
+        /* "src/token.yul":3232:3244   */
+      revert
+        /* "src/token.yul":3172:3174   */
+    tag_70:
+        /* "src/token.yul":3137:3154   */
+      dup1
+        /* "src/token.yul":3134:3135   */
+      0x04
+        /* "src/token.yul":3130:3155   */
+      add
+        /* "src/token.yul":3284:3301   */
+      calldataload
+        /* "src/token.yul":2870:2895   */
+      swap2
+      pop
+      pop
+        /* "src/token.yul":2936:2983   */
+      shl(0xa0, 0xffffffffffffffffffffffff)
+        /* "src/token.yul":2933:2934   */
+      dup2
+        /* "src/token.yul":2929:2984   */
+      and
+        /* "src/token.yul":2922:2985   */
+      iszero
+        /* "src/token.yul":2915:2986   */
+      iszero
+        /* "src/token.yul":2912:2914   */
+      iszero
+      tag_71
+      jumpi
+        /* "src/token.yul":3019:3020   */
+      0x00
+      0x00
+        /* "src/token.yul":3009:3021   */
+      revert
+        /* "src/token.yul":2912:2914   */
+    tag_71:
+        /* "src/token.yul":2852:3053   */
+    tag_69:
+      swap1
+      jump	// out
+        /* "src/token.yul":2814:3053   */
+    tag_29:
+        /* "src/token.yul":2850:2851   */
+      0x00
+        /* "src/token.yul":2875:2895   */
+      tag_73
+      tag_20
+      jump	// in
+    tag_73:
+        /* "src/token.yul":2870:2895   */
+      swap1
+      pop
+        /* "src/token.yul":2936:2983   */
+      shl(0xa0, 0xffffffffffffffffffffffff)
+        /* "src/token.yul":2933:2934   */
+      dup2
+        /* "src/token.yul":2929:2984   */
+      and
+        /* "src/token.yul":2922:2985   */
+      iszero
+        /* "src/token.yul":2915:2986   */
+      iszero
+        /* "src/token.yul":2912:2914   */
+      iszero
+      tag_74
+      jumpi
+        /* "src/token.yul":3019:3020   */
+      0x00
+      0x00
+        /* "src/token.yul":3009:3021   */
+      revert
+        /* "src/token.yul":2912:2914   */
+    tag_74:
+        /* "src/token.yul":2852:3053   */
+    tag_72:
+      swap1
+      jump	// out
+        /* "src/token.yul":3066:3315   */
+    tag_20:
+        /* "src/token.yul":3099:3100   */
+      0x00
+        /* "src/token.yul":3194:3208   */
+      0x44
+        /* "src/token.yul":3178:3192   */
+      calldatasize
+        /* "src/token.yul":3175:3209   */
+      lt
+        /* "src/token.yul":3172:3174   */
+      iszero
+      tag_76
+      jumpi
+      dup1
+      dup2
+        /* "src/token.yul":3232:3244   */
+      revert
+        /* "src/token.yul":3172:3174   */
+    tag_76:
+        /* "src/token.yul":3130:3155   */
+      0x24
+        /* "src/token.yul":3284:3301   */
+      calldataload
+        /* "src/token.yul":3279:3301   */
+      swap1
+      pop
+        /* "src/token.yul":3101:3315   */
+    tag_75:
+      swap1
+      jump	// out
+        /* "src/token.yul":3066:3315   */
+    tag_27:
+        /* "src/token.yul":3099:3100   */
+      0x00
+        /* "src/token.yul":3194:3208   */
+      0x64
+        /* "src/token.yul":3178:3192   */
+      calldatasize
+        /* "src/token.yul":3175:3209   */
+      lt
+        /* "src/token.yul":3172:3174   */
+      iszero
+      tag_78
+      jumpi
+      dup1
+      dup2
+        /* "src/token.yul":3232:3244   */
+      revert
+        /* "src/token.yul":3172:3174   */
+    tag_78:
+        /* "src/token.yul":3130:3155   */
+      0x44
+        /* "src/token.yul":3284:3301   */
+      calldataload
+        /* "src/token.yul":3279:3301   */
+      swap1
+      pop
+        /* "src/token.yul":3101:3315   */
+    tag_77:
+      swap1
+      jump	// out
+        /* "src/token.yul":3396:3495   */
+    tag_16:
+        /* "src/token.yul":3447:3448   */
+      dup1
+        /* "src/token.yul":3444:3445   */
+      0x00
+        /* "src/token.yul":3437:3449   */
+      mstore
+        /* "src/token.yul":3476:3480   */
+      0x20
+        /* "src/token.yul":3444:3445   */
+      0x00
+        /* "src/token.yul":3466:3481   */
+      return
+        /* "src/token.yul":3419:3495   */
+      pop
+    tag_79:
+      jump	// out
+        /* "src/token.yul":3508:3575   */
+    tag_24:
+        /* "src/token.yul":3559:3560   */
+      0x01
+        /* "src/token.yul":3444:3445   */
+      0x00
+        /* "src/token.yul":3437:3449   */
+      mstore
+        /* "src/token.yul":3476:3480   */
+      0x20
+        /* "src/token.yul":3444:3445   */
+      0x00
+        /* "src/token.yul":3466:3481   */
+      return
+        /* "src/token.yul":3530:3575   */
+    tag_80:
+      jump	// out
+        /* "src/token.yul":4585:4835   */
+    tag_60:
+        /* "src/token.yul":4638:4644   */
+      0x00
+        /* "src/token.yul":4696:4703   */
+      dup2
+        /* "src/token.yul":4542:4548   */
+      0x1000
+        /* "src/token.yul":4538:4558   */
+      add
+      dup2
+        /* "src/token.yul":4721:4738   */
+      mstore
+        /* "src/token.yul":4768:4775   */
+      dup3
+        /* "src/token.yul":4762:4766   */
+      0x20
+        /* "src/token.yul":4755:4776   */
+      mstore
+        /* "src/token.yul":4816:4820   */
+      0x40
+      dup2
+        /* "src/token.yul":4803:4821   */
+      keccak256
+        /* "src/token.yul":4793:4821   */
+      swap1
+      pop
+        /* "src/token.yul":4645:4835   */
+    tag_81:
+      swap3
+      swap2
+      pop
+      pop
+      jump	// out
+        /* "src/token.yul":5231:5343   */
+    tag_15:
+        /* "src/token.yul":5262:5265   */
+      0x00
+        /* "src/token.yul":5320:5327   */
+      dup2
+        /* "src/token.yul":4542:4548   */
+      0x1000
+        /* "src/token.yul":4538:4558   */
+      add
+        /* "src/token.yul":5291:5329   */
+      sload
+        /* "src/token.yul":5284:5329   */
+      swap1
+      pop
+        /* "src/token.yul":5266:5343   */
+    tag_82:
+      swap2
+      swap1
+      pop
+      jump	// out
+        /* "src/token.yul":5814:5950   */
+    tag_42:
+        /* "src/token.yul":5854:5860   */
+      0x00
+        /* "src/token.yul":5895:5935   */
+      tag_84
+        /* "src/token.yul":5927:5934   */
+      dup4
+        /* "src/token.yul":5918:5925   */
+      dup4
+        /* "src/token.yul":5895:5935   */
+      tag_60
+      jump	// in
+    tag_84:
+        /* "src/token.yul":5889:5936   */
+      sload
+        /* "src/token.yul":5879:5936   */
+      swap1
+      pop
+        /* "src/token.yul":5861:5950   */
+    tag_83:
+      swap3
+      swap2
+      pop
+      pop
+      jump	// out
+        /* "src/token.yul":6676:6809   */
+    tag_52:
+        /* "src/token.yul":6702:6703   */
+      0x00
+        /* "src/token.yul":6734:6735   */
+      dup3
+        /* "src/token.yul":6731:6732   */
+      dup3
+        /* "src/token.yul":6727:6736   */
+      add
+        /* "src/token.yul":6722:6736   */
+      swap1
+      pop
+        /* "src/token.yul":6775:6776   */
+      dup3
+        /* "src/token.yul":6772:6773   */
+      dup2
+        /* "src/token.yul":6769:6777   */
+      lt
+        /* "src/token.yul":6765:6766   */
+      dup3
+        /* "src/token.yul":6762:6763   */
+      dup3
+        /* "src/token.yul":6759:6767   */
+      lt
+        /* "src/token.yul":6756:6778   */
+      or
+        /* "src/token.yul":6753:6755   */
+      iszero
+      tag_86
+      jumpi
+        /* "src/token.yul":6791:6792   */
+      0x00
+      0x00
+        /* "src/token.yul":6781:6793   */
+      revert
+        /* "src/token.yul":6753:6755   */
+    tag_86:
+        /* "src/token.yul":6704:6809   */
+    tag_85:
+      swap3
+      swap2
+      pop
+      pop
+      jump	// out
+        /* "src/token.yul":7020:7117   */
+    tag_2:
+        /* "src/token.yul":7076:7085   */
+      dup1
+        /* "src/token.yul":7069:7086   */
+      iszero
+        /* "src/token.yul":7066:7068   */
+      iszero
+      tag_88
+      jumpi
+        /* "src/token.yul":7099:7100   */
+      0x00
+      0x00
+        /* "src/token.yul":7089:7101   */
+      revert
+        /* "src/token.yul":7066:7068   */
+    tag_88:
+        /* "src/token.yul":7048:7117   */
+      pop
+    tag_87:
+      jump	// out
+    tag_48:
+}
+
